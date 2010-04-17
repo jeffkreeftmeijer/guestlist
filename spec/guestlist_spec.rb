@@ -49,19 +49,22 @@ describe Guestlist do
           end
           
           it 'should return the user' do
-            User.authenticate('exists', 'wrongtoken').should be_instance_of User
+            User.authenticate('exists', 'newtoken').should be_instance_of User
           end
           
           it 'should not create a new user' do
             User.should_not_receive(:create!)
-            User.authenticate('exists', 'wrongtoken')
+            User.authenticate('exists', 'newtoken')
           end
 
           it 'should update the user token' do
             user = User.new
             User.stub(:find_by_login).and_return(user)
-            user.should_receive(:update_attributes)
-            @user = User.authenticate('exists', 'wrongtoken')
+            user.should_receive(:update_attributes).with({
+              :login =>           'exists',
+              :encrypted_token => Digest::SHA1.hexdigest('newtoken')
+            })
+            @user = User.authenticate('exists', 'newtoken')
           end
         end
       end
@@ -81,7 +84,7 @@ describe Guestlist do
       it 'should create a new user' do
         User.should_receive(:create!).with({
           :login =>           'doesnt_exist_yet',
-          :encrypted_token => 'ee977806d7286510da8b9a7492ba58e2484c0ecc'
+          :encrypted_token => Digest::SHA1.hexdigest('token')
         })
         User.authenticate('doesnt_exist_yet', 'token')
       end
