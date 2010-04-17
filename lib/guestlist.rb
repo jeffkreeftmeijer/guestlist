@@ -4,35 +4,29 @@ require 'httparty'
 module Guestlist
   module ClassMethods
     def authenticate(login, token)
+      attributes = {:login => login, :encrypted_token => encrypt(token)}
+
       if user = find_by_login(login)
-        return user if user.encrypted_token == encrypt(token)
+        return user if user.encrypted_token == attributes[:encrypted_token]
       end
-      
-      
-      if response = Github.fetch(login, token)
-        if user
-          user.update_attributes(:encrypted_token => encrypt(token))
-          user
-        else
-          User.create!(
-            :login => login,
-            :encrypted_token => encrypt(token)
-          )
-        end
-      end 
+
+      if Github.fetch(login, token)
+        user.update_attributes(attributes) if user
+        user || User.create!(attributes)
+      end
     end
-    
+
     protected
-    
+
     def encrypt(string)
       Digest::SHA1.hexdigest(string)
     end
   end
-    
+
   def self.included(base)
     base.extend(ClassMethods)
   end
-  
+
   class Github
     class StatusError < StandardError; end
 
