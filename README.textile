@@ -1,1 +1,3 @@
 h1. Guestlist
+
+Simple authentication using Github credentials.
